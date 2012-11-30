@@ -1,0 +1,64 @@
+#!/bin/bash
+ #	This script will search and replace all regular files for a string 
+ #	supplied by the user and replace it with another string. 
+ #	
+ #	Written by Josef Nevoral
+ #	josef.nevoral@gmail.com
+ #
+
+ ########## FUNCTIONS ####################
+ function usage {
+   echo "Not enough parameters provided."
+   echo "Usage: ./$0 searchstring replacestring"
+   echo "Remember to escape any special characters in the searchstring or the replacestring"
+   echo ""
+ }
+
+ function help {
+  echo "####### Help to searchReplace script #######"
+  echo "Options:"
+  echo "	-m or --mask: regular expression for filename to search"
+  echo "	-p or --path: path to directory in which to search for files"
+  echo "	-h: this help obviously :-)"
+  echo ""
+  echo "Parameters:"
+  echo "	searchstring: string to search for - dont forget to escape special characters"
+  echo "	replacestring: string to replace by - dont forget to escape special characters"
+ }
+ ########## END FUNCTIONS ################
+
+ mask=
+ path='./'
+
+ while [ "$#" != 0 ];
+ do
+  case "$1" in
+	-m | --mask)
+		mask=$2
+		shift 2;;
+	-p | --path)
+		path=$2
+		shift 2;;
+	-h | --help) 
+		help 
+		shift;;
+  esac
+ done
+ 
+ #check for required parameters
+ if  [ ${#1} -gt 0  ]  &&  [ ${#2} -gt 0  ];
+ then
+  for file in `find  -type f`;
+  do
+   if grep -q $1 $file;
+   then
+    cp $file $file.bak
+    echo "The string $1 will be replaced with $2 in $file"
+    sed 's/$1/$2/g' < $file.bak > $file
+    rm $file.bak
+   fi
+  done
+ else
+  #print usage information 
+  usage
+ fi
