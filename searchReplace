@@ -19,7 +19,9 @@
   echo "Options:"
   echo "	-m or --mask: regular expression for filename to search"
   echo "	-p or --path: path to directory in which to search for files"
-  echo "	-h: this help obviously :-)"
+  echo "	-b or --backup: create backup of changed files with timestamp"
+  echo "	-d or --dirmask: specify directory mask in which should files be"
+  echo "	-h or --help: this help obviously :-)"
   echo ""
   echo "Parameters:"
   echo "	searchstring: string to search for - dont forget to escape special characters"
@@ -28,7 +30,9 @@
  ########## END FUNCTIONS ################
 
  mask=
- path='./'
+ dirmask=
+ path='.'
+ createBackup=false
 
  while [ "$#" != 0 ];
  do
@@ -39,23 +43,45 @@
 	-p | --path)
 		path=$2
 		shift 2;;
+	-b | --backup)
+		createBackup=true
+		shift;;
 	-h | --help) 
 		help 
 		shift;;
+	-d | --dirmast)
+		dirmask=$2
+		shift 2;;
+	*)
+	  break
   esac
  done
- 
  #check for required parameters
  if  [ ${#1} -gt 0  ]  &&  [ ${#2} -gt 0  ];
  then
-  for file in `find  -type f`;
+  findCommand="find $path -type f"
+  if [ $mask ];
+  then
+    findCommand="$findCommand -name $mask"
+  fi
+  for file in `$findCommand`;
   do
    if grep -q $1 $file;
    then
+    dirpath=$(dirname $(readlink -f "$file"))
+    dir=${dirpath##/*/}
+    compare=$(echo $dir | grep $dirmask)
+    if [ ! $(echo $dir | grep "$dirmask") ] 
+    then
+      continue
+    fi
     cp $file $file.bak
     echo "The string $1 will be replaced with $2 in $file"
-    sed 's/$1/$2/g' < $file.bak > $file
-    rm $file.bak
+    sed "s/$1/$2/g" "$file.bak" > $file
+    if [ $createBackup == false ]
+    then
+      rm $file.bak
+    fi
    fi
   done
  else
